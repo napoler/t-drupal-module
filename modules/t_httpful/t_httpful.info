@@ -1,0 +1,7 @@
+name = Terry  httpful API
+description = Snoopy php net client PHP library at sourceforge https://github.com/t-web/httpful.
+package = Terry modules
+core = 7.x
+
+
+ dependencies[] = libraries (>=2)
