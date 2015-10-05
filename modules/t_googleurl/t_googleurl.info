@@ -1,5 +1,5 @@
 name = Terry  google url API
-description = Snoopy php net client PHP library at sourceforge.
+description = Library for navigation over google SERP (php written google scrapper)
 package = Terry modules
 core = 7.x
 
