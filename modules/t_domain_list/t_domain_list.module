@@ -1,0 +1,107 @@
+<?php
+/**
+* Implements hook_block_info().
+*/
+function t_domain_list_block_info() {
+  $blocks = array();
+  $blocks['t_domain_list_block'] = array(
+    'info' => t('Domain List'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function t_domain_list_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 't_domain_list_block' :
+      $block['subject'] = t('CSCT Affiliated Provincial Associations');
+      $block['content'] = _domain_block_view();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Renders the output for the block view
+ */
+function _domain_block_view() {
+
+  $current_base = $GLOBALS['base_url'];
+
+  // Build the query for listing all active domains
+  $query = db_select('domain', 'd')
+      ->fields('d', array('subdomain', 'sitename', 'scheme'))
+      ->condition('valid', 1, '=');
+  $result = $query->execute();
+  // Start Output
+  $output = '<ul class="domain-list">';
+  while($record = $result->fetchAssoc()) {
+    $full = $record['scheme'] . '://' . $record['subdomain'];
+    if($full != $current_base) {
+      $output .= '<li class="domain-item"><a href="' . $full . '">' . $record['sitename'] . '</a></li>';
+    }
+  }
+  $output .= "</ul>";
+
+  return $output;
+}
+
+
+
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function t_domain_list_menu() {
+ 
+  $aItems = array(
+      'domain_list_page' => array(
+        'title' => 'Domain List',
+        'page callback' => '_t_domain_list_page',
+        'access callback' => TRUE,
+              'menu_name' => 'main-menu',
+      ),
+    );
+  return $aItems;
+}
+ 
+/**
+ * Page callback mapped to the url /hello_world
+ *
+ * @return array
+ */
+function _t_domain_list_page() {
+    
+    $current_base = $GLOBALS['base_url'];
+
+  // Build the query for listing all active domains
+  $query = db_select('domain', 'd')
+      ->fields('d', array('subdomain', 'sitename', 'scheme'))
+      ->condition('valid', 1, '=');
+  $result = $query->execute();
+  // Start Output
+  $output = '<ul class="domain-list">';
+  while($record = $result->fetchAssoc()) {
+    $full = $record['scheme'] . '://' . $record['subdomain'];
+    if($full != $current_base) {
+      $output .= '<li class="domain-item"><a href="' . $full . '">' . $record['sitename'] . '</a></li>';
+    }
+  }
+  $output .= "</ul>";
+
+//  return $output;
+    
+
+    
+    
+  return array(
+    '#markup' => $output
+  );
+}
