@@ -38,6 +38,7 @@ function _domain_block_view() {
   $query = db_select('domain', 'd')
       ->fields('d', array('subdomain', 'sitename', 'scheme'))
       ->condition('valid', 1, '=');
+     $query->range(0,10); //取得10条数据
   $result = $query->execute();
   // Start Output
   $output = '<ul class="domain-list">';
@@ -85,6 +86,9 @@ function _t_domain_list_page() {
   $query = db_select('domain', 'd')
       ->fields('d', array('subdomain', 'sitename', 'scheme'))
       ->condition('valid', 1, '=');
+  // $query->range(0,10); //取得10条数据
+  
+   $query = $query->extend('PagerDefault')->limit(2); //limit条件是分页数目
   $result = $query->execute();
   // Start Output
   $output = '<ul class="domain-list">';
@@ -95,6 +99,8 @@ function _t_domain_list_page() {
     }
   }
   $output .= "</ul>";
+  
+   $output .= theme(‘pager’); //添加分页theme
 
 //  return $output;
     
