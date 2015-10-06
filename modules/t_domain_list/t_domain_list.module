@@ -63,7 +63,7 @@ function _domain_block_view() {
 function t_domain_list_menu() {
  
   $aItems = array(
-      'domain_list_page' => array(
+      'domain-list' => array(
         'title' => 'Domain List',
         'page callback' => '_t_domain_list_page',
         'access callback' => TRUE,
@@ -100,7 +100,7 @@ function _t_domain_list_page() {
   }
   $output .= "</ul>";
   
-   $output .= theme(‘pager’); //添加分页theme
+   $output .= theme('pager'); //添加分页theme
 
 //  return $output;
     
