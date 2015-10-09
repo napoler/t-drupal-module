@@ -1,0 +1,7 @@
+name = Terry Snoopy API
+description = Snoopy php net client PHP library at sourceforge.
+package = Terry modules
+core = 7.x
+
+
+ dependencies[] = libraries (>=2)

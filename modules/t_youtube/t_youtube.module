@@ -1,0 +1,675 @@
+<?php
+/**
+* Implements hook_block_info().
+*/
+function t_youtube_block_info() {
+  $blocks = array();
+  $blocks['t_youtube_block'] = array(
+    'info' => t('Domain List'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function t_youtube_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 't_youtube_block' :
+      $block['subject'] = t('CSCT Affiliated Provincial Associations');
+      $block['content'] = _domain_block_view();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Renders the output for the block view
+ */
+function _domain_block_view() {
+
+  $current_base = $GLOBALS['base_url'];
+
+  // Build the query for listing all active domains
+  $query = db_select('domain', 'd')
+      ->fields('d', array('subdomain', 'sitename', 'scheme'))
+      ->condition('valid', 1, '=');
+     $query->range(0,10); //取得10条数据
+  $result = $query->execute();
+  // Start Output
+  $output = '<ul class="domain-list">';
+  while($record = $result->fetchAssoc()) {
+    $full = $record['scheme'] . '://' . $record['subdomain'];
+    if($full != $current_base) {
+      $output .= '<li class="domain-item"><a href="' . $full . '">' . $record['sitename'] . '</a></li>';
+    }
+  }
+  $output .= "</ul>";
+
+  return $output;
+}
+
+
+
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function t_youtube_menu() {
+ 
+  $aItems = array(
+      'video-frontpage' => array(
+        'title' => ' Video',
+        'page callback' => '_t_youtube_frontpage',
+        'access callback' => TRUE,
+              'menu_name' => 'main-menu',
+      ),
+
+      'video-frontpage-form' => array(
+        'title' => ' Video Search form',
+        'page callback' => 'drupal_get_form',
+        
+     'page arguments' => array('t_youtube_form'), //put the name of the form here
+    'access callback' => TRUE
+      ),
+
+      'video-search/%/%/%' => array(
+        'title' => ' Video',
+        'page callback' => '_t_youtube_search',
+            'page arguments' => array(1,2,3),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+      'video-search/%' => array(
+        'title' => ' Video',
+        'page callback' => '_t_youtube_search',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+      'watch/%' => array(
+        'title' => ' Video',
+        'page callback' => '_t_youtube_watch',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+    );
+ 
+
+
+
+
+
+
+  return $aItems;
+}
+function _t_youtube_watch($videoId) {
+
+
+
+$query = new EntityFieldQuery;
+$entities = $query->entityCondition('entity_type', 'node')
+  ->entityCondition('bundle', 'video')
+  ->fieldCondition('field_videoid', 'value', $videoId)
+  ->execute();
+if($entities[node] ){
+
+  // drupal_goto("node/".$entities[node][1]->nid);
+
+foreach ($entities[node] as $key => $node) {
+  # code...
+    drupal_goto("node/".$node->nid,array(),'301');
+}
+
+
+}
+
+
+
+}
+
+/**
+ * A more complex page callback that takes arguments.
+ *
+ * This callback is mapped to the path 'examples/page_example/arguments/%/%'.
+ *
+ * The % arguments are passed in from the page URL. In our hook_menu
+ * implementation we instructed the menu system to extract the last two
+ * parameters of the path and pass them to this function as arguments.
+ *
+ * This function also demonstrates a more complex render array in the returned
+ * values. Instead of just rendering the HTML with a theme('item_list'), the
+ * list is left unrendered, and a #theme attached to it so that it can be
+ * rendered as late as possible, giving more parts of the system a chance to
+ * change it if necessary.
+ *
+ * Consult @link http://drupal.org/node/930760 Render Arrays documentation
+ * @endlink for details.
+ */
+function _t_youtube_search($keyword,$page="",$order="relevance") {
+  // // Make sure you don't trust the URL to be safe! Always check for exploits.
+  // if (!is_numeric($first) ) {
+  //   // We will just show a standard "access denied" page in this case.
+  //   drupal_access_denied();
+  //   // We actually don't get here.
+  //   return;
+  // }
+// $library =libraries_load("httpful");
+ // $list[] = t("Your search  keyword: @keyword.", array('@keyword' => $keyword));
+ 
+ // $list[] = t("First number was number.");
+ // 
+ // 
+ // 
+ // 
+
+// Try to load the library and check if that worked.
+if (($library = libraries_load("httpful")) && !empty($library['loaded'])) {
+  // Do something with the library here.
+  // 
+  // 
+  // 
+
+  $p.="";
+if($page){
+  $p.="&pageToken=$page";
+}
+if($order){
+  $p.="&order=$order";
+}
+global $conf;
+$youtubekey=$conf['youtubekey'] ;
+
+
+$keywords=urlencode($keyword);
+$listUrl="https://www.googleapis.com/youtube/v3/search?videoDefinition=high&part=snippet&q=$keywords&type=video+&key=$youtubekey&videoEmbeddable=true&type=video&maxResults=50$p";
+  //$listUrl="http://www.maomibox.com/";
+ $response = \Httpful\Request::get($listUrl)->send();
+ 
+// $list[] =  'The Dead Weather has ' . count($response->kind) . " albums.\n";
+ //$list[] = $listUrl;
+ //$list[] = print_r($conf);
+ //print_r($response->body->nextPageToken);
+
+
+
+
+
+
+ //print_r($response->body->items);
+
+
+foreach ($response->body->items as $key => $item) {
+  # code...
+ 
+  $video="";
+  //$video.=$item->id->videoId;
+  //$video.=$item->snippet->title;
+
+   $video.=l($item->snippet->title,"watch/".$item->id->videoId);
+
+//print_r($item);
+
+
+ t_youtube_add_video_validate($item) ;
+
+
+
+
+
+
+ $list[] = $video;
+
+}
+
+
+ 
+ $list[] =  l(t("Next"),"video-search/$keywords/".$response->body->nextPageToken);
+
+
+
+
+
+  //$list[] = $listUrl;
+
+
+}else {
+  $error = $library['error'];
+  $error_message = $library['error message'];
+  drupal_set_message($error_message ); 
+
+}
+
+ 
+// $page=$_GET[page];
+// $order=$_GET[order];
+
+
+
+
+//$list[] =  'The Dead Weather has ' ;
+
+
+  $render_array['_t_youtube_search'] = array(
+    // The theme function to apply to the #items.
+    '#theme' => 'item_list',
+    // The list itself.
+    '#items' => $list,
+    '#title' => t("Your search  keyword: @keyword.", array('@keyword' => $keyword)),
+  );
+  return $render_array;
+}
+/**
+ * @} End of "defgroup page_example".
+ */
+
+///yan zheng
+function t_youtube_add_video_validate($video) {
+
+
+$query = new EntityFieldQuery;
+$entities = $query->entityCondition('entity_type', 'node')
+  ->entityCondition('bundle', 'video')
+  ->fieldCondition('field_videoid', 'value', $video->id->videoId)
+  ->execute();
+if($entities[node] ){
+
+ // drupal_goto("node/".$entities[node][1]->nid);
+}else{
+
+//add video to node
+t_youtube_add_video($video->id->videoId) ;
+
+
+}
+
+
+
+}
+//get video info use youtube download
+function t_youtube_video_info($videoId) {
+
+
+
+ 
+// $videoId="9wG0oBAlcFs";
+
+$cmd="youtube-dl -j https://www.youtube.com/watch?v=".$videoId;
+
+exec($cmd, $output, $return_var);
+//echo "\nreturn_var:";
+//print_r($return_var);
+//echo "\noutput:";
+
+$videoInfo=drupal_json_decode($output[0]) ;
+// print_r($videoInfo);
+
+return $videoInfo;
+}
+function t_youtube_add_video($videoId) {
+
+   $video=t_youtube_video_info($videoId) ;
+$node = new stdClass;
+        $node->type = 'video';
+        $node->language = "en";
+        $node->promote = 1;
+        $node->format = 2;
+        $node->uid = 1;
+      //  $title = $content[title];
+    ///    $body = $content[Description];
+        $node->title = $video[title];
+        $node->body[und][0][value] = $video[description] ;
+        $node->field_videoid[und][0][value] =  $video[id];
+        $node->field_upload_date[und][0][value] =  $video[upload_date];
+                $node->field_uploader_id[und][0][value] =  $video[uploader_id];
+                        $node->field_extractor[und][0][value] =  $video[extractor];
+                          $node->field_height[und][0][value] =  $video[height];
+                $node->field_like_count[und][0][value] =  $video[like_count];
+                        $node->field_uploader[und][0][value] =  $video[uploader];
+
+
+  $node->field_duration[und][0][value] =  $video[duration];
+                $node->field_view_count[und][0][value] =  $video[view_count];
+
+
+
+  $node->field_videoid[und][0][value] =  $video[id];
+
+
+  $node->field_videoid[und][0][value] =  $video[id];
+                $node->field_videoid[und][0][value] =  $video[id];
+                   
+
+
+foreach ($video[categories] as $key => $cat) {
+  # code...
+  # 
+
+
+  try {
+                    //   node_save($node);
+                    // $developer_id = _get_tid_from_term_name($content[ContactDeveloper], $vocabulary =
+                    //  'developer');
+                    //$appid = _get_tid_from_term_name($appid, $vocabulary ='appid');
+
+                    $category_id = t_youtube_get_tid_from_term_name($cat, $vocabulary = 'categories');
+                } catch (exception $e) {
+                //    echo 'faill add category.';
+                }
+ 
+           $node->field_categories[und]["$key"][tid] =   $category_id;
+
+
+}
+
+
+      
+
+
+          //      echo "End add tax";
+
+
+
+          // $node->field_name[und][0][value] =  $video->snippet->description;
+          //   $node->field_name[und][0][value] =  $video->snippet->description;
+          //     $node->field_name[und][0][value] =  $video->snippet->description;
+          //       $node->field_name[und][0][value] =  $video->snippet->description;
+
+//print_r($node);
+
+try
+        {
+         node_save($node);
+        }
+        catch (exception $e)
+        {
+               // echo 'faill save node.';
+    drupal_set_message(t('faill save node!'));
+
+        }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+/**
+ * Return the term id for a given term name.
+  自动创建分类
+ */
+function t_youtube_get_tid_from_term_name($term_name, $vocabulary = 'tags') {
+    // $vocabulary = 'zhonglei';
+    $arr_terms = taxonomy_get_term_by_name($term_name, $vocabulary);
+    if (!empty($arr_terms)) {
+        $arr_terms = array_values($arr_terms);
+        $tid = $arr_terms[0]->tid;
+    } else {
+        $vobj = taxonomy_vocabulary_machine_name_load($vocabulary);
+        $term = new stdClass();
+        $term->name = $term_name;
+        $term->vid = $vobj->vid;
+        taxonomy_term_save($term);
+        $tid = $term->tid;
+    }
+    return $tid;
+}
+
+
+
+/**
+ * Implements hook_theme().
+ *
+ * Defines the theming capabilities provided by this module.
+ */
+function t_youtube_theme() {
+  return array(
+    'theming_example_content_array' => array(
+      // We use 'render element' when the item to be passed is a self-describing
+      // render array (it will have #theme_wrappers)
+      'render element' => 'element',
+    ),
+    'theming_example_list' => array(
+      // We use 'variables' when the item to be passed is an array whose
+      // structure must be described here.
+      'variables' => array(
+        'title' => NULL,
+        'items' => NULL,
+      ),
+    ),
+ 
+ '_t_youtube_search'  => array(
+    'render element' => 'element',
+      // In this one the rendering will be done by a template file
+      // (theming-example-text-form.tpl.php) instead of being rendered by a
+      // function. Note the use of dashes to separate words in place of
+      // underscores. The template file's extension is also left out so that
+      // it may be determined automatically depending on the template engine
+      // the site is using.
+      'template' => 't_youtube_search',
+    ),
+
+
+
+  );
+}
+
+
+/**
+ * Implements template_preprocess().
+ *
+ * We prepare variables for use inside the theming-example-text-form.tpl.php
+ * template file.
+ *
+ * In this example, we create a couple new variables, 'text_form' and
+ * 'text_form_content', that clean up the form output.  Drupal will turn the
+ * array keys in the $variables array into variables for use in the template.
+ *
+ * So $variables['text_form'] becomes available as $text_form in the template.
+ *
+ * @see theming-example-text-form.tpl.php
+ */
+function template_preprocess_t_youtube_search(&$variables) {
+  $variables['text_form_content'] = array();
+  $text_form_hidden = array();
+
+  // Each form element is rendered and saved as a key in $text_form_content, to
+  // give the themer the power to print each element independently in the
+  // template file.  Hidden form elements have no value in the theme, so they
+  // are grouped into a single element.
+  foreach (element_children($variables['form']) as $key) {
+    $type = $variables['form'][$key]['#type'];
+    if ($type == 'hidden' || $type == 'token') {
+      $text_form_hidden[] = drupal_render($variables['form'][$key]);
+    }
+    else {
+      $variables['text_form_content'][$key] = drupal_render($variables['form'][$key]);
+    }
+  }
+  $variables['text_form_content']['hidden'] = implode($text_form_hidden);
+
+  // The entire form is then saved in the $text_form variable, to make it easy
+  // for the themer to print the whole form.
+  $variables['text_form'] = implode($variables['text_form_content']);
+}
+/**
+ * @} End of "defgroup theming_example".
+ */
+
+
+
+
+
+/**
+ * Page callback mapped to the url /hello_world
+ *
+ * @return array
+ */
+function _t_youtube_frontpage() {
+    
+  //   $current_base = $GLOBALS['base_url'];
+
+  // // Build the query for listing all active domains
+  // $query = db_select('domain', 'd')
+  //     ->fields('d', array('subdomain', 'sitename', 'scheme'))
+  //     ->condition('valid', 1, '=');
+  // // $query->range(0,10); //取得10条数据
+  
+  //  $query = $query->extend('PagerDefault')->limit(50); //limit条件是分页数目
+  // $result = $query->execute();
+  // // Start Output
+  // $output = '<ul class="domain-list">';
+  // while($record = $result->fetchAssoc()) {
+  //   $full = $record['scheme'] . '://' . $record['subdomain'];
+  //   if($full != $current_base) {
+  //     $output .= '<li class="domain-item"><a href="' . $full . '">' . $record['sitename'] . '</a></li>';
+  //   }
+  // }
+  // $output .= "</ul>";
+  
+  //  $output .= theme('pager'); //添加分页theme
+
+//  return $output;
+    
+
+
+$output = '<div class="youtube_frontpage">';
+
+$output .= "tstttttttttt";
+
+
+$output .=  "</div>";
+
+
+
+
+
+
+    
+    
+  return array(
+    '#markup' => $output
+  );
+}
+
+
+
+
+
+
+
+
+
+function t_youtube_form($form, &$form_state) {
+
+
+
+ $form['keyword'] = array(
+    '#type' => 'textfield', //you can find a list of available types in the form api
+    '#title' => 'What is Your keyword?',
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#required' => TRUE, //make this field required 
+  );
+  
+  
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('search!'),
+  );
+  
+  return $form;
+}
+
+
+
+function  t_youtube_form_validate($form, &$form_state) {
+
+
+   if (!($form_state['values']['keyword'] )){
+    form_set_error('keyword', t('input your keyword plz.'));
+  }
+
+}
+
+function t_youtube_submit_handler($form, &$form_state)
+{
+    // this function will be executed after the click
+    // event of the user on the "submit" button.
+    // here I only print a message
+    // you can access a database, redirect, or whatever you want, obviously 
+    drupal_set_message(t('Ok!'));
+}
+
+
+
+
+
+function  t_youtube_form_submit($form, &$form_state) {
+
+
+// $output = '<div class="youtube_frontpage">';
+
+// $output .= "tsttttt3333333333ttttt";
+
+
+// $output .=  "</div>";
+ 
+
+// echo $output;
+
+//print_r($form);
+//  drupal_set_message(t('Your Keyword:'.$form_state['values']['keyword'])); 
+    
+drupal_set_message(t('Your Keyword:'.$form_state['values']['keyword'])); 
+
+    drupal_goto("video-search/".$form_state['values']['keyword'].'',array(),'301');
+    
+  // return array(
+  //   '#markup' => $output
+  // );
+
+}
+
+
+
+
+
+
+function t_youtube_search_page()
+{
+    $db_result = db_query( "select name from {my_color} ");
+    $header = array("Color Name");
+    // create array and add one element called data
+    $rows['data'] = array();
+    while ($row = db_fetch_object($db_result)) {
+        $rows[] = array($row->name);
+    }
+    if (count($rows) == 1)
+        $rows[] = array("No Colors Entered Yet");
+ 
+    $link_to_add_form = l('Add More Colors','my_color/data_entry_form');
+ 
+    return theme_table($header, $rows).'<br/>'.$link_to_add_form;
+}

@@ -1,0 +1,73 @@
+<?php
+
+// Include the only file of the library.
+// There are 5-6 funcs there and their names are not prefixed. But these names are quite unprobable to cause collisions...
+
+ 
+//how  to use
+// // $path = libraries_get_path('snoopy');
+// //  print $path ;
+
+//  $library =libraries_load("snoopy");
+//  //print_r($library);
+// if (($library = libraries_load("snoopy")) && !empty($library['loaded'])) {
+//   // Do something with the library here.
+//   // 
+//   echo 'jiazia';
+// }else{
+
+// 	echo $library["error message"];
+// }
+
+ 
+// $snoopy = new Snoopy;
+//  $snoopy->fetchtext("http://www.php.net/");
+//  print $snoopy->results;
+
+
+
+
+
+
+
+
+function t_snoopy_api_libraries_info() {
+
+ 
+
+ // A very simple library. No changing APIs (hence, no versions), no variants.
+  // Expected to be extracted into 'sites/all/libraries/snoopy'.
+  $libraries['snoopy'] = array(
+    'name' => 'snoopy library',
+    'vendor url' => 'https://github.com/t-web/Snoopy',
+    'download url' => 'https://github.com/t-web/Snoopy',
+    'version arguments' => array(
+      'file' =>   'Snoopy.class.php',// Could be any file with version info 
+      'pattern' => '/Version (\d+)/', 
+      'lines' => 8,
+    ),
+    'version'=> '1.2.4',
+    'files' => array(
+      'php' => array(
+      'Snoopy.class.php',
+
+      ), //this can be a path to the file location like array('lib/simple.js')
+    ),
+  );
+
+  return $libraries;
+
+
+
+}
+
+//  function  t_snoopy_api_autoload_info() {
+//   $path = libraries_get_path('snoopy');
+//   return array(
+//     'Snoopy' => array(
+//       'file' => 'Snoopy.class.php',
+//       'file path' => $path,
+//     ),
+    
+//   );
+// }
