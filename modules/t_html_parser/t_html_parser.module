@@ -1,0 +1,41 @@
+<?php
+
+// Include the only file of the library.
+// There are 5-6 funcs there and their names are not prefixed. But these names are quite unprobable to cause collisions...
+
+ 
+
+function t_html_parser_libraries_info() {
+
+ 
+
+ // A very simple library. No changing APIs (hence, no versions), no variants.
+  // Expected to be extracted into 'sites/all/libraries/snoopy'.
+  $libraries['html-parser'] = array(
+    'name' => 'HtmlParser library',
+    'vendor url' => 'https://github.com/t-web/html-parser',
+    'download url' => 'https://github.com/t-web/html-parser/archive/master.zip',
+    // 'version arguments' => array(
+    //   'file' =>   'Snoopy.class.php',// Could be any file with version info 
+    //   'pattern' => '/Version (\d+)/', 
+    //   'lines' => 8,
+    // ),
+    'version'=> '1.x',
+    'files' => array(
+      'php' => array(
+      'src/ParserInterface.php',
+            'src/ParserAbstract.php',
+                  'src/ParserTidy.php',
+                        'src/ParserDom.php',
+
+      ), //this can be a path to the file location like array('lib/simple.js')
+    ),
+  );
+
+  return $libraries;
+
+
+
+}
+
+ 

@@ -1,0 +1,7 @@
+name = Terry html parser
+description = php html解析工具，类似与PHP Simple HTML DOM Parser，但是比它快好几倍.下载https://github.com/t-web/html-parser
+package = Terry modules
+core = 7.x
+
+
+ dependencies[] = libraries (>=2)

@@ -1,0 +1,7 @@
+name = Terry Didom html parser
+description = php html解析工具，类似与PHP Simple HTML DOM Parser，https://github.com/t-web/DiDOM
+package = Terry modules
+core = 7.x
+
+
+ dependencies[] = libraries (>=2)

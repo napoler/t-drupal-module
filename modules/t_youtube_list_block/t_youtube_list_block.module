@@ -1,0 +1,225 @@
+<?php
+/**
+* Implements hook_block_info().
+*/
+function t_youtube_list_block_block_info() {
+  $blocks = array();
+  $blocks['t_youtube_list_block_block'] = array(
+    'info' => t('Video List'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function t_youtube_list_block_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 't_youtube_list_block_block' :
+      $block['subject'] = "More Video About ".drupal_get_title();
+      $block['content'] = _t_youtube_list_block_block_view();
+//print_r($delta);
+      //   $block['content'] = _t_youtube_list_block_block_view();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Renders the output for the block view
+ */
+function _t_youtube_list_block_block_view() {
+// if (arg(0) == 'node') {
+//   $nid = arg(1);
+// }
+// if ($node = menu_get_object()) {
+//   // Use the node object.
+//   // 
+//   $output=$node;
+// }
+// $node=node_load($nid);
+
+$output= _t_youtube_list_block_search_mini(drupal_get_title(),$page="",$order="relevance",$per="10") ;
+
+  return $output;
+}
+
+
+function _t_youtube_list_block_search_mini($keyword,$page="",$order="relevance",$per="10") {
+  // // Make sure you don't trust the URL to be safe! Always check for exploits.
+  // if (!is_numeric($first) ) {
+  //   // We will just show a standard "access denied" page in this case.
+  //   drupal_access_denied();
+  //   // We actually don't get here.
+  //   return;
+  // }
+// $library =libraries_load("httpful");
+ // $list[] = t("Your search  keyword: @keyword.", array('@keyword' => $keyword));
+ 
+ // $list[] = t("First number was number.");
+ // 
+ // 
+ // 
+ // 
+
+// Try to load the library and check if that worked.
+if (($library = libraries_load("httpful")) && !empty($library['loaded'])) {
+  // Do something with the library here.
+  // 
+  // 
+  // 
+
+  $p.="";
+if($page){
+  $p.="&pageToken=$page";
+}
+if($order){
+  $p.="&order=$order";
+}
+if($per){
+  $p.="&maxResults=$per";
+}
+
+global $conf;
+$youtubekey=$conf['youtubekey'] ;
+$video_site=$conf['video_site'] ;
+ //drupal_set_title($keywords);
+$keywords=urlencode($keyword);
+$listUrl="https://www.googleapis.com/youtube/v3/search?videoDefinition=high&part=snippet&q=$keywords&type=video+&key=$youtubekey&videoEmbeddable=true&type=video".$p;
+  //$listUrl="http://www.maomibox.com/";
+ $response = \Httpful\Request::get($listUrl)->send();
+ 
+// $list[] =  'The Dead Weather has ' . count($response->kind) . " albums.\n";
+ //$list[] = $listUrl;
+ //$list[] = print_r($conf);
+ //print_r($response->body->nextPageToken);
+
+
+
+
+$variables = array(
+  'items' => array(),
+  // Leave the title element empty to omit the ul title.
+  'title' => '',
+ 'type' => 'ul',
+  'attributes' => array(
+    'class' => array('media-list'),
+    ),
+
+);
+ 
+
+if($response->body){
+
+}else{
+
+  return "";
+}
+
+
+ //print_r($response->body->items);
+
+
+foreach ($response->body->items as $key => $item) {
+  # code...
+ 
+  $video="";
+  //$video.=$item->id->videoId;
+  //$video.=$item->snippet->title;
+  //
+  $video.='
+ 
+ <div class="media-left">
+ ';
+
+
+
+  $img=' <img class="" width="150" src="'.$item->snippet->thumbnails->medium->url.'" alt="'.$item->snippet->title.'">';
+  $video.=l( $img,$video_site."/watch/".$item->id->videoId, array('html' => TRUE, ));
+   
+   $title=l($item->snippet->title,$video_site."/watch/".$item->id->videoId);
+      $video.='
+
+        </div>
+ <div class="media-body">
+        <h3>'. $title.'</h3>
+        <p>'. $item->snippet->description.'</p>
+     
+      </div>
+ 
+      ';
+
+
+
+
+
+//print_r($item);
+
+ //t_youtube_list_block_add_video_validate($item) ;
+
+
+
+
+// $variables['items'][] =  $video;
+
+ 
+$variables['items'][] = array(
+  'data' => $video,
+  'id' => 'item-'.$key,
+  'class' => array(
+    'media',
+  ),
+  
+);
+  
+ 
+
+ // $list[] = $video;
+
+}
+
+
+
+
+
+
+
+
+  //$list[] = $listUrl;
+
+
+}else {
+  $error = $library['error'];
+  $error_message = $library['error message'];
+  drupal_set_message($error_message ); 
+
+}
+
+ 
+$output.=theme('item_list', $variables);
+
+
+// $output.='<ul class="nav nav-pills" role="tablist">
+
+//   <li role="presentation">Per Page <span class="badge">'.$response->body->pageInfo->resultsPerPage.'</span></li>
+//   <li role="presentation">Total Results <span class="badge">'.$response->body->pageInfo->totalResults.'</span></li>
+// </ul>';
+
+$next =  l(t("More $keyword video"),"video-list/$keywords/".$response->body->nextPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+ $previous =  l(t("Previous"),"video-list/$keywords/".$response->body->prevPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+
+$output.='<nav>
+  <ul class="pager">
+ 
+    <li class="next">'.$next.'</li>
+  </ul>
+</nav>';
+ //$output.=$listUrl;
+ return $output;
+ 
+}
+

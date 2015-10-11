@@ -1,0 +1,7 @@
+name = Terry  nokogiri api
+description =  html解析 api https://github.com/t-web/nokogiri
+package = Terry modules
+core = 7.x
+
+
+ dependencies[] = libraries (>=2)
