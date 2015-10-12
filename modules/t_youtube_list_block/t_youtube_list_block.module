@@ -45,6 +45,13 @@ function _t_youtube_list_block_block_view() {
 
 $output= _t_youtube_list_block_search_mini(drupal_get_title(),$page="",$order="relevance",$per="10") ;
 
+if($output){
+
+}else{
+
+  return NULL;
+}
+
   return $output;
 }
 
@@ -113,11 +120,11 @@ $variables = array(
 );
  
 
-if($response->body){
+if($response->body->items){
 
 }else{
 
-  return "";
+  return NULL;
 }
 
 
@@ -209,15 +216,15 @@ $output.=theme('item_list', $variables);
 //   <li role="presentation">Total Results <span class="badge">'.$response->body->pageInfo->totalResults.'</span></li>
 // </ul>';
 
-$next =  l(t("More $keyword video"),"video-list/$keywords/".$response->body->nextPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
- $previous =  l(t("Previous"),"video-list/$keywords/".$response->body->prevPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+//$next =  l(t("More $keyword video"),"video-list/$keywords/".$response->body->nextPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+ //$previous =  l(t("Previous"),"video-list/$keywords/".$response->body->prevPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
 
-$output.='<nav>
-  <ul class="pager">
+//$output.='<nav>
+  //<ul class="pager">
  
-    <li class="next">'.$next.'</li>
-  </ul>
-</nav>';
+    //<li class="next">'.$next.'</li>
+  //</ul>
+//</nav>';
  //$output.=$listUrl;
  return $output;
  

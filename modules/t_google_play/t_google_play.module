@@ -1,0 +1,1159 @@
+<?php
+/**
+* Implements hook_block_info().
+*/
+function t_google_play_block_info() {
+  $blocks = array();
+  $blocks['t_google_play_block'] = array(
+    'info' => t('App List'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function t_google_play_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 't_google_play_block' :
+   $block['subject'] = "More App About ".drupal_get_title();
+      $block['content'] = _google_play_block_view();
+      break; 
+  }
+
+  return $block;
+}   
+
+/**
+ * Renders the output for the block view
+ */
+function _google_play_block_view() {
+
+  $output=_t_google_play_search(drupal_get_title(),"en") ;
+
+  return $output;
+}
+
+
+
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function t_google_play_menu() {
+ 
+  $aItems = array(
+      'video-frontpage' => array(
+        'title' => ' Video',
+        'page callback' => '_t_google_play_frontpage',
+        'access callback' => TRUE,
+              'menu_name' => 'main-menu',
+      ),
+
+      'video-frontpage-form' => array(
+        'title' => ' Video Search form',
+        'page callback' => 'drupal_get_form',
+        
+     'page arguments' => array('t_google_play_form'), //put the name of the form here
+    'access callback' => TRUE
+      ),
+
+      'applist/%/%' => array(
+        'title' => ' App list',
+        'page callback' => '_t_google_play_search',
+            'page arguments' => array(1,2),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+      'video-search/%' => array(
+        'title' => ' Video',
+        'page callback' => '_t_google_play_search',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+      'app/%' => array(
+        'title' => ' Video',
+        'page callback' => '_t_google_play_app',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+    );
+ 
+
+
+
+
+
+
+  return $aItems;
+}
+
+/**
+ * A more complex page callback that takes arguments.
+ *
+ * This callback is mapped to the path 'examples/page_example/arguments/%/%'.
+ *
+ * The % arguments are passed in from the page URL. In our hook_menu
+ * implementation we instructed the menu system to extract the last two
+ * parameters of the path and pass them to this function as arguments.
+ *
+ * This function also demonstrates a more complex render array in the returned
+ * values. Instead of just rendering the HTML with a theme('item_list'), the
+ * list is left unrendered, and a #theme attached to it so that it can be
+ * rendered as late as possible, giving more parts of the system a chance to
+ * change it if necessary.
+ *
+ * Consult @link http://drupal.org/node/930760 Render Arrays documentation
+ * @endlink for details.
+ */
+function _t_google_play_search($keyword,$hl="en") {    
+$variables = array(
+  'items' => array(),
+  // Leave the title element empty to omit the ul title.
+  'title' => '',
+  'type' => 'ul',
+  'attributes' => array(
+   'class' => array('gg-applist','row'),
+  
+  
+  ),
+);
+$applist= t_google_play_getapplist($keyword);
+//$list[] =  'The Dead Weather has ' ;
+
+global $base_url;
+foreach($applist as $key =>$app){
+	
+	$app_box=' <a href="'.$base_url.'/app/'.$app["id"].'" class="apptitle"  >';
+		$app_box.=' <img class="appicon" src="'.$app[icon].'" alt="'.$app["title"].' icon">';
+ 
+				$app_box.='<span class="lt">'.$app["title"].' </span>';
+				$app_box.=' </a>';
+ 
+	
+	$variables['items'][] = array(
+  'data' => $app_box,
+  'id' => 'item-'.$key,
+  'class' => array('item'),
+ //col-sm-6 col-md-4
+);
+	
+	
+	}
+ drupal_add_css(drupal_get_path('module', 't_google_play') . '/css/googleplay.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
+$output=theme('item_list', $variables);
+ 
+ 
+return $output;
+
+
+
+
+
+ 
+}
+
+
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 获取google play的搜索结果
+ */
+ 
+function  t_google_play_getapplist($keyword){
+
+// echo "ok";
+  if (($library = libraries_load("nokogiri")) && !empty($library['loaded'])) {
+
+$library = libraries_load("httpful");
+
+
+  $keywords=urlencode($keyword);
+ $listUrl="https://play.google.com/store/search?q=$keywords&c=apps";
+//   //$listUrl="http://www.maomibox.com/";
+ $response = \Httpful\Request::get($listUrl)->send();
+
+//  print_r($response->body);
+
+// $html = gzdecode(file_get_contents('http://habrahabr.ru/'));
+
+$saw = new nokogiri($response->body);
+// var_dump($saw->get('a.habracut')->toArray());
+// var_dump($saw->get('ul.panel-nav-top li.current')->toArray());
+// var_dump($saw->get('#sidebar dl.air-comment a.topic')->toArray());
+// var_dump($saw->get('a[rel=bookmark]')->toArray());
+// 
+//   
+$images=$saw->get('.card-content .cover-image-container .cover-image')->toArray();
+ $links=$saw->get('.card-content a.title')->toArray();
+// foreach ($saw->get('.card-content .cover-image-container .cover-image') as $link){
+
+// 	echo "<pre>";
+//     print_r($link);
+// echo "</pre>";
+
+
+// }
+
+
+//echo "<pre>";
+// print_r($images);
+// print_r($links);
+foreach ($images as $key => $image) {
+	# code...
+	# 
+	# 
+	$app[icon]=$image["src"];
+		$app["title"]=$links["$key"]["title"];
+			//$app["href"]=$links["$key"]["href"];
+			$app["id"]=t_google_play_getappid($links["$key"]["href"]);
+			
+		
+
+                      	                     $apps[]=$app;
+
+}
+//print_r($apps);
+//echo "</pre>";
+
+return  $apps;
+
+  }
+  }
+
+
+
+//
+
+//解析URL参数
+function t_google_play_parseUrlParam($query)
+{
+				$queryArr = explode('&', $query);
+				$params = array();
+				if ($queryArr[0] !== '')
+				{
+								foreach ($queryArr as $param)
+								{
+												list($name, $value) = explode('=', $param);
+												$params[urldecode($name)] = urldecode($value);
+								}
+				}
+				return $params;
+}
+
+//设置URL参数数组
+function t_google_play_setUrlParams($cparams, $url = '')
+{
+				$parse_url = $url === '' ? parse_url($_SERVER["REQUEST_URI"]) : parse_url($url);
+				$query = isset($parse_url['query']) ? $parse_url['query'] : '';
+				$params = parseUrlParam($query);
+				foreach ($cparams as $key => $value)
+				{
+								$params["$key"] = $value;
+				}
+				return $parse_url['path'] . '?' . http_build_query($params);
+}
+
+//获取URL参数
+function t_google_play_getUrlParam($cparam, $url = '')
+{
+				$parse_url = $url === '' ? parse_url($_SERVER["REQUEST_URI"]) : parse_url($url);
+				$query = isset($parse_url['query']) ? $parse_url['query'] : '';
+				$params = t_google_play_parseUrlParam($query);
+				return isset($params[$cparam]) ? $params[$cparam] : '';
+}
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 
+ * 分析获取appid 可接受id或者链接
+ * 传入google play链接
+ * 
+ */
+ 
+function t_google_play_getappid($url)
+{
+
+				//$url="com.unsys.fcall.lwkwang";
+				$appid = t_google_play_getUrlParam('id', $url);
+
+
+				//echo $appid;
+				if ($appid)
+				{
+								//id不存在;
+				} else
+				{
+
+
+								$appid = $url;
+
+				}
+				return $appid;
+}
+
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 
+ */
+
+function  t_google_play_close_tab()
+{
+
+				echo "<script language='javascript'>
+      window.opener=null;window.close();
+       </script>";
+
+}
+
+
+
+/**
+ * @} End of "defgroup page_example".
+ */
+
+///yan zheng
+function t_google_play_add_video_validate($video) {
+
+
+$query = new EntityFieldQuery;
+$entities = $query->entityCondition('entity_type', 'node')
+  ->entityCondition('bundle', 'video')
+  ->fieldCondition('field_videoid', 'value', $video->id->videoId)
+  ->execute();
+if($entities["node"] ){
+
+ // drupal_goto("node/".$entities["node"][1]->nid);
+}else{
+
+//add video to node
+t_google_play_add_video($video->id->videoId) ;
+
+
+}
+
+
+
+}
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 
+ * 执行发布node节点
+ * 
+ */
+
+//执行发布应用
+function t_google_play_add_app($appid, $uid = "1", $hl = "en",$siteId,$dl="0")
+{
+//echo $dl;
+
+
+   // $_SERVER['HTTP_HOST'] = 'apkdigg.com';
+   // $_SERVER['REMOTE_ADDR'] = '74.207.243.38';
+
+				//获取应用基本信息
+				try
+				{
+					
+				//	t_google_play_getapp_info($appId)
+								$content = t_google_play_getapp_info($appid);
+								         //echo "<br>get ".$content["title"]." ok!<br>";
+								   // return $content; 
+								        // print_r($content);
+								        
+								        
+								        echo "111111";
+
+                      
+				}
+				catch (exception $e)
+				{
+								return null;
+				}
+
+				if (empty($content))
+				{
+								return null;
+				}
+
+  //echo "222";
+				//$vn = $content["softwareversion"];
+
+
+				//echo "</br>应用id $appid";
+				//echo "版本号$vn";
+         //尝试检测
+		// echo "尝试检测$vn";
+		// print_r(check_version($appid,$vn));
+
+
+				//if (check_version($appid, $vn))
+				//{
+								//echo "发布过";
+								//return null;
+
+							//// exit;
+				//}
+
+
+
+				//if( $content["price"]=='0'){
+
+
+				
+					//$apk = s3apk($appid);
+    ////         	                                  	try
+				//// {
+
+				//// 	 	$apk = s3apk($appid);
+
+				//// }
+				//// catch (exception $e)
+				//// {
+				//// 				echo 'faill save node.';
+				//// 				return null;
+				//// }
+
+ 
+                                                                       //if ($apk["code"]!="new"&&$dl=="1") {
+  	                                                              	//return null;
+                                                                          //}
+                         
+            
+            //}
+				
+            
+            
+            
+            //  echo "start create node</br>";
+            
+				//$content[qr] = 'http://chart.apis.google.com/chart?cht=qr&chs=250x250&chl=' . $url;
+				//  print_r($content);
+				
+				
+				$node = new stdClass;
+				$node->type = 'app';
+				$node->language = $hl;
+				$node->promote = 1;
+				$node->format = 2;
+				$node->uid = $uid;
+				$title = $content["title"];
+				$body = $content["description"];
+				$node->title = $title;
+				$node->body["und"][0]["value"] = $body;
+				$node->field_name["und"][0]["value"] = $content["title"];
+				//
+
+ // echo "333";
+
+				$node->field_id["und"][0]["value"] = $appid;
+
+
+				$node->field_icon["und"][0]["value"] = $content["icon"];
+				//   $node->field_developer["und"][0]["value"] = $content["developer"];
+				   $node->field_price["und"][0]["value"] = $content["price"];
+				//  $node->field_softwareversion["und"][0]["value"] = $content["softwareversion"];
+				$node->field_numdownloads["und"][0]["value"] = $content["numDownloads"];
+				//  $node->field_filesize["und"][0]["value"] = $content[fileSize];
+				//  $node->field_datepublished["und"][0]["value"] = $content[datePublished];
+				$node->field_operatingsystems["und"][0]["value"] = $content["operatingSystems"];
+				$node->field_contentrating["und"][0]["value"] = $content["contentRating"];
+				$node->field_devlink["und"][0]["value"] = $content["website"];
+				$node->field_devmail["und"][0]["value"] = $content["mail"];
+				//  $node->field_update["und"][0]["value"] = $content[update];
+				$node->field_ratingcount["und"][0]["value"] = $content["rating"][1]["content"];
+				$node->field_ratingvalue["und"][0]["value"] =  $content["rating"][0]["content"];
+				//$node->field_qr["und"][0]["value"] = $content[qr];
+
+				//$node->field_valutazione["und"][0]["value"] = $content[valutazione];
+				$node->field_video["und"][0]["value"] = $content["video"];
+                                                      $node->field_version["und"]['0']["value"]  =$content["softwareversion"];
+				//  print_r($node);
+				foreach ($content["screenshot"] as $i => $item)
+				{
+
+								$node->field_screenshot["und"][$i]["value"] = $item["src"];
+				}
+
+				foreach ($content["review"] as $i => $item)
+				{
+
+								$node->field_review["und"][$i]["value"] = $item["text"];
+				}
+
+                                              $node->domain_site = TRUE; // Sets "Send to all affiliates" off
+                                                    $node->domain_source = $siteId; // Sets the "Source domain"
+                                                    $node->domains = array(
+                                                    '1' => '1',
+                                                  //  $siteId => $siteId
+                                                    ); // Sets the domains node is published to.
+		
+
+				// print_r($apk);
+
+				//file_entity_file_load($files);
+
+ // echo "444";
+                //if($apk){
+
+              
+				//$node->field_apkfiles["und"]['0'] = $apk['file'];
+				////$file=$apk['file'];
+
+				//$file = file_load($apk['file']['fid']);
+
+
+				//if ($apk['pack_info']['version'])
+				//{
+								//$file->field_version["und"]['0']["value"] = $apk['pack_info']['version'];
+				//} else
+				//{
+
+								//$file->field_version["und"]['0']["value"] = $content["softwareversion"];
+				//}
+				//$file->field_app_name["und"]['0']["value"] = $content["title"];
+				//$file->field_md5["und"]['0']["value"] = $apk['filemd5'];
+				//$file->field_sha["und"]['0']["value"] = $apk['sha'];
+				//$file->field_note["und"]['0']["value"] = $content["whatsnew"];
+
+				//file_entity_file_update($file);
+
+                //}else{
+                             
+      
+                //}
+	                    $node->field_note["und"]['0']["value"] = $content["whatsnew"];                                                
+
+ // echo "555";
+//echo  "ceshi11";
+
+				/*****
+				//    $file->field_version["und"]['0']["value"] =  "22222222";
+				file_entity_file_update($file);
+				$node->field_apkfiles["und"]['0'][field_version]["und"]['0']["value"] =  $content["softwareversion"];
+				$node->field_apkfiles["und"]['0'][field_md5]["und"]['0']["value"] = $apk['filemd5'];
+				$node->field_apkfiles["und"]['0'][field_sha]["und"]['0']["value"] = $apk['sha'];
+				$node->field_apkfiles["und"]['0'][field_note]["und"]['0']["value"] = $content[update];
+				******/
+
+
+				//  $entity = entity_create('app', $values);
+
+
+				// $node->field_md5["und"]['0']['value'] = $apk['filemd5'];
+				//包信息
+				//$node->field_package_info["und"]['0']['value']=$apk['pack_info'];
+				//包信息
+				//$node->field_permissions["und"]=$apk['permissions'];
+				//$node->field_permissions["und"] = get_permissions($appid);
+
+
+				//添加分类
+
+				$developer_id =  t_google_play_get_tid_from_term_name($content["developer"], $vocabulary =
+								'developer');
+//print_r($node);
+				$node->field_developer["und"][0]['tid'] = $developer_id;
+
+				$category_id =  t_google_play_get_tid_from_term_name($content["category"], $vocabulary =
+								'category');
+
+				$node->field_category["und"][0]['tid'] = $category_id;
+
+				//   $developer_id=_get_tid_from_term_name($term_name,$vocabulary = 'developer');
+
+				// $node->field_developer["und"][0]['tid']= $developer_id;
+
+
+				//node_save($node);
+
+ // echo "666";
+			 
+				//echo  "ceshi22";
+				//print_r($node);
+//return $node;
+			
+try
+        {
+         node_save($node);
+        }
+        catch (exception $e)
+        {
+               // echo 'faill save node.';
+    drupal_set_message(t('faill save node!'));
+
+        }
+
+        return $node->nid;
+
+                  //echo  "nide".$node->nid;
+				////   $nodelong = url('node/' . $node->nid, $options);
+				 //echo 'Thank You Submit</br>';
+				//// echo '<div class="shortyrl"><a href="' . $nodelong . '"  >' . $node->title .
+				////     '</a></br></div>';
+			 //echo "<hr>";
+
+
+				////跳转发布后内容
+				//if ($type == "go")
+				//{
+
+
+							  //drupal_goto('node/' . $node->nid);
+
+				//}
+//return $node;
+			//$node = null;
+				//close_tab();
+
+
+}
+
+
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 注释函数
+ *获取应用信息 
+ */
+function t_google_play_getapp_info($appId) {
+$app["id"]=$appId;
+//加载需要的库
+  if (($library = libraries_load("nokogiri")) && !empty($library['loaded'])) {
+
+$library = libraries_load("httpful");
+
+//https://play.google.com/store/apps/details?id=com.cloudcade.shopheroes
+ $appUrl="https://play.google.com/store/apps/details?id=$appId";
+
+ $response = \Httpful\Request::get($appUrl)->send();
+ 
+ 
+ 
+$saw = new nokogiri($response->body);
+// var_dump($saw->get('a.habracut')->toArray());
+// var_dump($saw->get('ul.panel-nav-top li.current')->toArray());
+// var_dump($saw->get('#sidebar dl.air-comment a.topic')->toArray());
+// var_dump($saw->get('a[rel=bookmark]')->toArray());
+// 
+//   
+$app["title"]=$saw->get('.details-info .document-title div')->toArray()[0]["#text"][0];
+
+$app["icon"]=$saw->get('.details-info .cover-container  .cover-image')->toArray()[0]["src"];
+
+$app["screenshot"]=$saw->get('img.screenshot')->toArray();
+
+$app["category"]=$saw->get('div.info-container a.category span')->toArray()[0]["#text"][0];
+ 
+$app["developer"]=$saw->get('a.primary span')->toArray()[0]["#text"][0];
+
+
+foreach($saw->get('.featured-review div  .author-name a') as $key => $item){
+	
+	
+	//print_r($item["#text"][0]);
+	
+	$review["author"]=$item["#text"][0];
+		$review["text"]=$saw->get('.featured-review div  .review-text')->toArray()["$key"]["#text"][1];
+		
+		$reviews[]=$review;
+		//print_r($review);
+	}
+
+$app["review"]=$reviews;
+
+$app["description"]=$saw->get('div.id-app-orig-desc')->toArray()[0]["#text"][0];
+$app["whatsnew"]=$saw->get('div.whatsnew  .recent-change')->toArray()[0]["#text"][0];
+$app["rating"]=$saw->get('div.rating-box  .score-container')->toArray()[0]["meta"];
+$app["video"]=$saw->get('div.details-section-contents .preview-overlay-container')->toArray()[0]["data-video-url"];
+
+foreach($saw->get('div.details-section-contents .meta-info .content') as $key => $item){
+	if($item["itemprop"]){
+		$itemprop=$item["itemprop"];
+		$app["$itemprop"]=$item["#text"][0];
+		
+		}
+ 
+	}
+
+
+	
+ 
+
+$app["website"]=$saw->get('div.details-section-contents .meta-info .contains-text-link a')->toArray()[0]["href"][0];
+ $app["mail"]=$saw->get('div.details-section-contents .meta-info .contains-text-link a')->toArray()[1]["href"][0];
+$app["privacy"]=$saw->get('div.details-section-contents .meta-info .contains-text-link a')->toArray()[2]["href"][0];
+
+
+
+
+ //$links=$saw->get('.card-content a.title')->toArray();
+ 
+return $app;
+ 
+ 
+ 
+ 
+
+
+
+}
+
+ 
+}
+
+
+
+
+
+
+
+
+
+
+function t_google_play_add_video($videoId) {
+
+   $video=t_google_play_video_info($videoId) ;
+$node = new stdClass;
+        $node->type = 'video';
+        $node->language = "en";
+        $node->promote = 1;
+        $node->format = 2;
+        $node->uid = 1;
+      //  $title = $content["title"];
+    ///    $body = $content[Description];
+        $node->title = $video["title"];
+        $node->body["und"][0]["value"] = $video["description"] ;
+        $node->field_videoid["und"][0]["value"] =  $video["id"];
+        $node->field_upload_date["und"][0]["value"] =  $video["upload_date"];
+                $node->field_uploader_id["und"][0]["value"] =  $video["uploader_id"];
+                        $node->field_extractor["und"][0]["value"] =  $video[extractor];
+                          $node->field_height["und"][0]["value"] =  $video[height];
+                $node->field_like_count["und"][0]["value"] =  $video[like_count];
+                        $node->field_uploader["und"][0]["value"] =  $video[uploader];
+
+
+  $node->field_duration["und"][0]["value"] =  $video[duration];
+                $node->field_view_count["und"][0]["value"] =  $video[view_count];
+
+
+
+  $node->field_videoid["und"][0]["value"] =  $video["id"];
+
+
+  $node->field_videoid["und"][0]["value"] =  $video["id"];
+                $node->field_videoid["und"][0]["value"] =  $video["id"];
+                   
+
+
+foreach ($video["categories"] as $key => $cat) {
+  # code...
+  # 
+
+
+  try {
+                    //   node_save($node);
+                    // $developer_id = _get_tid_from_term_name($content[ContactDeveloper], $vocabulary =
+                    //  'developer');
+                    //$appid = _get_tid_from_term_name($appid, $vocabulary ='appid');
+
+                    $category_id = t_google_play_get_tid_from_term_name($cat, $vocabulary = 'categories');
+                } catch (exception $e) {
+                //    echo 'faill add category.';
+                }
+ 
+           $node->field_categories["und"]["$key"]["tid"]=   $category_id;
+
+
+}
+
+
+      
+
+
+          //      echo "End add tax";
+
+
+
+          // $node->field_name["und"][0]["value"] =  $video->snippet->description;
+          //   $node->field_name["und"][0]["value"] =  $video->snippet->description;
+          //     $node->field_name["und"][0]["value"] =  $video->snippet->description;
+          //       $node->field_name["und"][0]["value"] =  $video->snippet->description;
+
+//print_r($node);
+
+try
+        {
+         node_save($node);
+        }
+        catch (exception $e)
+        {
+               // echo 'faill save node.';
+    drupal_set_message(t('faill save node!'));
+
+        }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+/**
+ * Return the term id for a given term name.
+  自动创建分类
+ */
+function t_google_play_get_tid_from_term_name($term_name, $vocabulary = 'tags') {
+    // $vocabulary = 'zhonglei';
+    $arr_terms = taxonomy_get_term_by_name($term_name, $vocabulary);
+    if (!empty($arr_terms)) {
+        $arr_terms = array_values($arr_terms);
+        $tid = $arr_terms[0]->tid;
+    } else {
+        $vobj = taxonomy_vocabulary_machine_name_load($vocabulary);
+        $term = new stdClass();
+        $term->name = $term_name;
+        $term->vid = $vobj->vid;
+        taxonomy_term_save($term);
+        $tid = $term->tid;
+    }
+    return $tid;
+}
+
+
+
+/**
+ * Implements hook_theme().
+ *
+ * Defines the theming capabilities provided by this module.
+ */
+function t_google_play_theme() {
+  return array(
+    'theming_example_content_array' => array(
+      // We use 'render element' when the item to be passed is a self-describing
+      // render array (it will have #theme_wrappers)
+      'render element' => 'element',
+    ),
+    'theming_example_list' => array(
+      // We use 'variables' when the item to be passed is an array whose
+      // structure must be described here.
+      'variables' => array(
+        'title' => NULL,
+        'items' => NULL,
+      ),
+    ),
+ 
+ '_t_google_play_search'  => array(
+    'render element' => 'element',
+      // In this one the rendering will be done by a template file
+      // (theming-example-text-form.tpl.php) instead of being rendered by a
+      // function. Note the use of dashes to separate words in place of
+      // underscores. The template file's extension is also left out so that
+      // it may be determined automatically depending on the template engine
+      // the site is using.
+      'template' => 't_google_play_search',
+    ),
+
+
+
+  );
+}
+
+
+/**
+ * Implements template_preprocess().
+ *
+ * We prepare variables for use inside the theming-example-text-form.tpl.php
+ * template file.
+ *
+ * In this example, we create a couple new variables, 'text_form' and
+ * 'text_form_content', that clean up the form output.  Drupal will turn the
+ * array keys in the $variables array into variables for use in the template.
+ *
+ * So $variables['text_form'] becomes available as $text_form in the template.
+ *
+ * @see theming-example-text-form.tpl.php
+ */
+function template_preprocess_t_google_play_search(&$variables) {
+  $variables['text_form_content'] = array();
+  $text_form_hidden = array();
+
+  // Each form element is rendered and saved as a key in $text_form_content, to
+  // give the themer the power to print each element independently in the
+  // template file.  Hidden form elements have no value in the theme, so they
+  // are grouped into a single element.
+  foreach (element_children($variables['form']) as $key) {
+    $type = $variables['form']["$key"]['#type'];
+    if ($type == 'hidden' || $type == 'token') {
+      $text_form_hidden[] = drupal_render($variables['form']["$key"]);
+    }
+    else {
+      $variables['text_form_content']["$key"] = drupal_render($variables['form']["$key"]);
+    }
+  }
+  $variables['text_form_content']['hidden'] = implode($text_form_hidden);
+
+  // The entire form is then saved in the $text_form variable, to make it easy
+  // for the themer to print the whole form.
+  $variables['text_form'] = implode($variables['text_form_content']);
+}
+/**
+ * @} End of "defgroup theming_example".
+ */
+
+
+
+
+
+/**
+ * Page callback mapped to the url /hello_world
+ *
+ * @return array
+ */
+function _t_google_play_frontpage() {
+    
+  //   $current_base = $GLOBALS['base_url'];
+
+  // // Build the query for listing all active domains
+  // $query = db_select('domain', 'd')
+  //     ->fields('d', array('subdomain', 'sitename', 'scheme'))
+  //     ->condition('valid', 1, '=');
+  // // $query->range(0,10); //取得10条数据
+  
+  //  $query = $query->extend('PagerDefault')->limit(50); //limit条件是分页数目
+  // $result = $query->execute();
+  // // Start Output
+  // $output = '<ul class="domain-list">';
+  // while($record = $result->fetchAssoc()) {
+  //   $full = $record['scheme'] . '://' . $record['subdomain'];
+  //   if($full != $current_base) {
+  //     $output .= '<li class="domain-item"><a href="' . $full . '">' . $record['sitename'] . '</a></li>';
+  //   }
+  // }
+  // $output .= "</ul>";
+  
+  //  $output .= theme('pager'); //添加分页theme
+
+//  return $output;
+    
+
+
+$output = '<div class="youtube_frontpage">';
+
+$output .= "tstttttttttt";
+
+
+$output .=  "</div>";
+
+
+
+
+
+
+    
+    
+  return array(
+    '#markup' => $output
+  );
+}
+
+
+
+
+
+
+
+
+
+function t_google_play_form($form, &$form_state) {
+
+
+
+ $form['keyword'] = array(
+    '#type' => 'textfield', //you can find a list of available types in the form api
+    '#title' => 'What is Your keyword?',
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#required' => TRUE, //make this field required 
+  );
+  
+  
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('search!'),
+  );
+  
+  return $form;
+}
+
+
+
+function  t_google_play_form_validate($form, &$form_state) {
+
+
+   if (!($form_state['values']['keyword'] )){
+    form_set_error('keyword', t('input your keyword plz.'));
+  }
+
+}
+
+function t_google_play_submit_handler($form, &$form_state)
+{
+    // this function will be executed after the click
+    // event of the user on the "submit" button.
+    // here I only print a message
+    // you can access a database, redirect, or whatever you want, obviously 
+    drupal_set_message(t('Ok!'));
+}
+
+
+
+
+
+function  t_google_play_form_submit($form, &$form_state) {
+
+
+// $output = '<div class="youtube_frontpage">';
+
+// $output .= "tsttttt3333333333ttttt";
+
+
+// $output .=  "</div>";
+ 
+
+// echo $output;
+
+//print_r($form);
+//  drupal_set_message(t('Your Keyword:'.$form_state['values']['keyword'])); 
+    
+drupal_set_message(t('Your Keyword:'.$form_state['values']['keyword'])); 
+
+    drupal_goto("video-search/".$form_state['values']['keyword'].'',array(),'301');
+    
+  // return array(
+  //   '#markup' => $output
+  // );
+
+}
+
+
+
+
+
+
+function t_google_play_search_page()
+{
+    $db_result = db_query( "select name from {my_color} ");
+    $header = array("Color Name");
+    // create array and add one element called data
+    $rows['data'] = array();
+    while ($row = db_fetch_object($db_result)) {
+        $rows[] = array($row->name);
+    }
+    if (count($rows) == 1)
+        $rows[] = array("No Colors Entered Yet");
+ 
+    $link_to_add_form = l('Add More Colors','my_color/data_entry_form');
+ 
+    return theme_table($header, $rows).'<br/>'.$link_to_add_form;
+}
+
+
+
+
+
+
+
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 注释函数
+ * 
+ */
+
+function _t_google_play_app($appId) {
+
+
+
+$query = new EntityFieldQuery;
+$entities = $query->entityCondition('entity_type', 'node')
+  ->entityCondition('bundle', 'app')
+  ->fieldCondition('field_id', 'value', $appId)
+  ->execute();
+if($entities["node"] ){
+
+  // drupal_goto("node/".$entities["node"][1]->nid);
+
+foreach ($entities["node"] as $key => $node) {
+  # code...
+    drupal_goto("node/".$node->nid,array(),'301');
+}
+
+
+}else{
+	//调用下载
+	//return "dlllllllllll";
+	
+
+
+ 
+ 		try
+				{
+					
+			 
+$nid=t_google_play_add_app($appId,  "1", "en","1","0");
+                      
+				}
+				catch (exception $e)
+				{
+			
+						//	print_r($e); 
+				}
+				
+			    drupal_goto("node/".$nid,array(),'301');	
+				//	echo $appId;
+// print_r($nid);
+ 
+
+	  
+	  
+	}
+
+
+
+}

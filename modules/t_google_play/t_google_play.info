@@ -1,0 +1,7 @@
+name = Terry Google Play
+description = Provides a block which lists all active domains and links them to their respective sites
+package = Terry module
+dependencies[] = t_httpful t_nokogiri
+dependencies[] = block
+core = 7.x
+;files[] = t_youtube.module

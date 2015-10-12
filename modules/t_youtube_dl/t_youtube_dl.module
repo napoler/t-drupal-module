@@ -1,0 +1,111 @@
+<?php
+/**
+* Implements hook_block_info().
+*/
+function t_youtube_dl_block_info() {
+  $blocks = array();
+  $blocks['t_youtube_dl_block'] = array(
+    'info' => t('Video List'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function t_youtube_dl_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 't_youtube_dl_block' :
+      $block['subject'] = "Download ".drupal_get_title();
+      $block['content'] = _t_youtube_dl_block_view();
+//print_r($delta);
+      //   $block['content'] = _t_youtube_dl_block_view();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Renders the output for the block view
+ */
+function _t_youtube_dl_block_view() {
+ if (arg(0) == 'node') {
+   $nid = arg(1);
+ }
+// if ($node = menu_get_object()) {
+//   // Use the node object.
+//   // 
+//   $output=$node;
+// }
+ $node=node_load($nid);
+
+//$output= _t_youtube_dl_search_mini(drupal_get_title(),$page="",$order="relevance",$per="10") ;
+
+  return $output;
+}
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function t_youtube_dl_menu() {
+ 
+  $aItems = array(
+ 
+      'dl/%' => array(
+        'title' => ' Download',
+        'page callback' => '_t_youtube_dl',
+            'page arguments' => array(1),
+        'access callback' => TRUE,
+       'type' => MENU_CALLBACK,
+    ),
+
+
+    );
+ 
+
+
+
+
+
+
+  return $aItems;
+}
+ 
+
+function _t_youtube_dl($videoId) {
+
+
+
+//$query = new EntityFieldQuery;
+//$entities = $query->entityCondition('entity_type', 'node')
+  //->entityCondition('bundle', 'video')
+  //->fieldCondition('field_videoid', 'value', $videoId)
+  //->execute();
+//if($entities[node] ){
+
+  //// drupal_goto("node/".$entities[node][1]->nid);
+
+//foreach ($entities[node] as $key => $node) {
+  //# code...
+    //drupal_goto("node/".$node->nid,array(),'301');
+//}
+
+//}else{
+
+////add video to node
+//$nid=t_youtube_dl_add_video($videoId) ;
+  ////  drupal_goto("node/".$nid,array(),'301');
+
+//}
+
+echo "dl";
+
+
+}
+ 
+ 

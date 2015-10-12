@@ -1,0 +1,255 @@
+<?php
+/**
+* Implements hook_block_info().
+*/
+function t_google_play_list_block_block_info() {
+  $blocks = array();
+  $blocks['t_google_play_list_block_block'] = array(
+    'info' => t('App List'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function t_google_play_list_block_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 't_google_play_list_block_block' :
+   $block['subject'] = "More App About ".drupal_get_title();
+      $block['content'] = _t_google_play_list__block_view();
+      break; 
+  }
+
+  return $block;
+}   
+
+/**
+ * Renders the output for the block view
+ */
+function _t_google_play_list__block_view() {
+
+  $output=_t_google_play_list_block_search(drupal_get_title(),"en") ;
+
+  return $output;
+}
+
+
+ 
+/**
+ * A more complex page callback that takes arguments.
+ *
+ * This callback is mapped to the path 'examples/page_example/arguments/%/%'.
+ *
+ * The % arguments are passed in from the page URL. In our hook_menu
+ * implementation we instructed the menu system to extract the last two
+ * parameters of the path and pass them to this function as arguments.
+ *
+ * This function also demonstrates a more complex render array in the returned
+ * values. Instead of just rendering the HTML with a theme('item_list'), the
+ * list is left unrendered, and a #theme attached to it so that it can be
+ * rendered as late as possible, giving more parts of the system a chance to
+ * change it if necessary.
+ *
+ * Consult @link http://drupal.org/node/930760 Render Arrays documentation
+ * @endlink for details.
+ */
+function _t_google_play_list_block_search($keyword,$hl="en") {    
+$variables = array(
+  'items' => array(),
+  // Leave the title element empty to omit the ul title.
+  'title' => '',
+  'type' => 'ul',
+  'attributes' => array(
+   'class' => array('gg-applist','row'),
+  
+  
+  ),
+);
+$applist= t_google_play_list_block_getapplist($keyword);
+//$list[] =  'The Dead Weather has ' ;
+if($applist==NULL){
+	return NULL;
+	}
+global $conf;
+$appsite=$conf['app_site'];
+foreach($applist as $key =>$app){
+	
+	$app_box=' <a href="'.$appsite.'/app/'.$app["id"].'" class="apptitle"  >';
+		$app_box.=' <img class="appicon" src="'.$app[icon].'" alt="'.$app["title"].' icon">';
+ 
+				$app_box.='<span class="lt">'.$app["title"].' </span>';
+				$app_box.=' </a>';
+ 
+	
+	$variables['items'][] = array(
+  'data' => $app_box,
+  'id' => 'item-'.$key,
+  'class' => array('item'),
+ //col-sm-6 col-md-4
+);
+	
+	
+	}
+ drupal_add_css(drupal_get_path('module', 't_google_play_list_block') . '/css/googleplay.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
+$output=theme('item_list', $variables);
+ 
+ 
+return $output;
+
+
+
+
+
+ 
+}
+
+
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 获取google play的搜索结果
+ */
+ 
+function  t_google_play_list_block_getapplist($keyword){
+
+// echo "ok";
+  if (($library = libraries_load("nokogiri")) && !empty($library['loaded'])) {
+
+$library = libraries_load("httpful");
+
+
+  $keywords=urlencode($keyword);
+ $listUrl="https://play.google.com/store/search?q=$keywords&c=apps";
+//   //$listUrl="http://www.maomibox.com/";
+ $response = \Httpful\Request::get($listUrl)->send();
+
+//  print_r($response->body);
+
+// $html = gzdecode(file_get_contents('http://habrahabr.ru/'));
+
+$saw = new nokogiri($response->body);
+// var_dump($saw->get('a.habracut')->toArray());
+// var_dump($saw->get('ul.panel-nav-top li.current')->toArray());
+// var_dump($saw->get('#sidebar dl.air-comment a.topic')->toArray());
+// var_dump($saw->get('a[rel=bookmark]')->toArray());
+// 
+//   
+$images=$saw->get('.card-content .cover-image-container .cover-image')->toArray();
+ $links=$saw->get('.card-content a.title')->toArray();
+// foreach ($saw->get('.card-content .cover-image-container .cover-image') as $link){
+
+// 	echo "<pre>";
+//     print_r($link);
+// echo "</pre>";
+
+
+// }
+
+if($images){
+	}else{
+		return NULL;
+		}
+//echo "<pre>";
+// print_r($images);
+// print_r($links);
+foreach ($images as $key => $image) {
+	# code...
+	# 
+	# 
+	$app[icon]=$image["src"];
+		$app["title"]=$links["$key"]["title"];
+			//$app["href"]=$links["$key"]["href"];
+			$app["id"]=t_google_play_list_block_getappid($links["$key"]["href"]);
+			
+		
+
+                      	                     $apps[]=$app;
+
+}
+//print_r($apps);
+//echo "</pre>";
+
+return  $apps;
+
+  }
+  }
+ 
+ 
+//
+
+//解析URL参数
+function t_google_play_list_block_parseUrlParam($query)
+{
+				$queryArr = explode('&', $query);
+				$params = array();
+				if ($queryArr[0] !== '')
+				{
+								foreach ($queryArr as $param)
+								{
+												list($name, $value) = explode('=', $param);
+												$params[urldecode($name)] = urldecode($value);
+								}
+				}
+				return $params;
+}
+
+//设置URL参数数组
+function t_google_play_list_block_setUrlParams($cparams, $url = '')
+{
+				$parse_url = $url === '' ? parse_url($_SERVER["REQUEST_URI"]) : parse_url($url);
+				$query = isset($parse_url['query']) ? $parse_url['query'] : '';
+				$params = parseUrlParam($query);
+				foreach ($cparams as $key => $value)
+				{
+								$params["$key"] = $value;
+				}
+				return $parse_url['path'] . '?' . http_build_query($params);
+}
+
+//获取URL参数
+function t_google_play_list_block_getUrlParam($cparam, $url = '')
+{
+				$parse_url = $url === '' ? parse_url($_SERVER["REQUEST_URI"]) : parse_url($url);
+				$query = isset($parse_url['query']) ? $parse_url['query'] : '';
+				$params = t_google_play_list_block_parseUrlParam($query);
+				return isset($params[$cparam]) ? $params[$cparam] : '';
+}
+/*
+ * 
+ * name: 未知
+ * @param
+ * @return
+ * 
+ * 分析获取appid 可接受id或者链接
+ * 传入google play链接
+ * 
+ */
+ 
+function t_google_play_list_block_getappid($url)
+{
+
+				//$url="com.unsys.fcall.lwkwang";
+				$appid = t_google_play_list_block_getUrlParam('id', $url);
+
+
+				//echo $appid;
+				if ($appid)
+				{
+								//id不存在;
+				} else
+				{
+
+
+								$appid = $url;
+
+				}
+				return $appid;
+}
+
+
