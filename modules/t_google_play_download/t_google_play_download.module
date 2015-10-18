@@ -1,0 +1,42 @@
+<?php
+
+
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function t_google_play_download_menu() {
+ 
+  $aItems = array(
+  
+
+      'app/%' => array(
+        'title' => ' dl',
+        'page callback' => '_t_google_play_download_app',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+    );
+ 
+
+
+
+
+
+
+  return $aItems;
+}
+
+
+function _t_google_play_download_app($appId){
+	
+	
+	
+	
+	
+	}

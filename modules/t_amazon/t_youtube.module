@@ -5,7 +5,7 @@
 function t_youtube_block_info() {
   $blocks = array();
   $blocks['t_youtube_block'] = array(
-    'info' => t('Domain List'),
+    'info' => t('Video List'),
   );
 
   return $blocks;
@@ -19,8 +19,10 @@ function t_youtube_block_view($delta='') {
 
   switch($delta) {
     case 't_youtube_block' :
-      $block['subject'] = t('CSCT Affiliated Provincial Associations');
-      $block['content'] = _domain_block_view();
+      $block['subject'] = "More Video About ".drupal_get_title();
+      $block['content'] = _t_youtube_block_view();
+//print_r($delta);
+      //   $block['content'] = _t_youtube_block_view();
       break;
   }
 
@@ -30,137 +32,24 @@ function t_youtube_block_view($delta='') {
 /**
  * Renders the output for the block view
  */
-function _domain_block_view() {
+function _t_youtube_block_view() {
+// if (arg(0) == 'node') {
+//   $nid = arg(1);
+// }
+// if ($node = menu_get_object()) {
+//   // Use the node object.
+//   // 
+//   $output=$node;
+// }
+// $node=node_load($nid);
 
-  $current_base = $GLOBALS['base_url'];
-
-  // Build the query for listing all active domains
-  $query = db_select('domain', 'd')
-      ->fields('d', array('subdomain', 'sitename', 'scheme'))
-      ->condition('valid', 1, '=');
-     $query->range(0,10); //取得10条数据
-  $result = $query->execute();
-  // Start Output
-  $output = '<ul class="domain-list">';
-  while($record = $result->fetchAssoc()) {
-    $full = $record['scheme'] . '://' . $record['subdomain'];
-    if($full != $current_base) {
-      $output .= '<li class="domain-item"><a href="' . $full . '">' . $record['sitename'] . '</a></li>';
-    }
-  }
-  $output .= "</ul>";
+$output= _t_youtube_search_mini(drupal_get_title(),$page="",$order="relevance",$per="10") ;
 
   return $output;
 }
 
 
-
-
-/**
- * Implements hook_menu()
- * @return array
- */
-function t_youtube_menu() {
- 
-  $aItems = array(
-      'video-frontpage' => array(
-        'title' => ' Video',
-        'page callback' => '_t_youtube_frontpage',
-        'access callback' => TRUE,
-              'menu_name' => 'main-menu',
-      ),
-
-      'video-frontpage-form' => array(
-        'title' => ' Video Search form',
-        'page callback' => 'drupal_get_form',
-        
-     'page arguments' => array('t_youtube_form'), //put the name of the form here
-    'access callback' => TRUE
-      ),
-
-      'video-search/%/%/%' => array(
-        'title' => ' Video',
-        'page callback' => '_t_youtube_search',
-            'page arguments' => array(1,2,3),
-     'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
- 
-      ),
-
-
-      'video-search/%' => array(
-        'title' => ' Video',
-        'page callback' => '_t_youtube_search',
-            'page arguments' => array(1),
-     'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
- 
-      ),
-
-      'watch/%' => array(
-        'title' => ' Video',
-        'page callback' => '_t_youtube_watch',
-            'page arguments' => array(1),
-     'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
- 
-      ),
-
-
-    );
- 
-
-
-
-
-
-
-  return $aItems;
-}
-function _t_youtube_watch($videoId) {
-
-
-
-$query = new EntityFieldQuery;
-$entities = $query->entityCondition('entity_type', 'node')
-  ->entityCondition('bundle', 'video')
-  ->fieldCondition('field_videoid', 'value', $videoId)
-  ->execute();
-if($entities[node] ){
-
-  // drupal_goto("node/".$entities[node][1]->nid);
-
-foreach ($entities[node] as $key => $node) {
-  # code...
-    drupal_goto("node/".$node->nid,array(),'301');
-}
-
-
-}
-
-
-
-}
-
-/**
- * A more complex page callback that takes arguments.
- *
- * This callback is mapped to the path 'examples/page_example/arguments/%/%'.
- *
- * The % arguments are passed in from the page URL. In our hook_menu
- * implementation we instructed the menu system to extract the last two
- * parameters of the path and pass them to this function as arguments.
- *
- * This function also demonstrates a more complex render array in the returned
- * values. Instead of just rendering the HTML with a theme('item_list'), the
- * list is left unrendered, and a #theme attached to it so that it can be
- * rendered as late as possible, giving more parts of the system a chance to
- * change it if necessary.
- *
- * Consult @link http://drupal.org/node/930760 Render Arrays documentation
- * @endlink for details.
- */
-function _t_youtube_search($keyword,$page="",$order="relevance") {
+function _t_youtube_search_mini($keyword,$page="",$order="relevance",$per="10") {
   // // Make sure you don't trust the URL to be safe! Always check for exploits.
   // if (!is_numeric($first) ) {
   //   // We will just show a standard "access denied" page in this case.
@@ -191,12 +80,16 @@ if($page){
 if($order){
   $p.="&order=$order";
 }
+if($per){
+  $p.="&maxResults=$per";
+}
+
 global $conf;
 $youtubekey=$conf['youtubekey'] ;
 
-
+ //drupal_set_title($keywords);
 $keywords=urlencode($keyword);
-$listUrl="https://www.googleapis.com/youtube/v3/search?videoDefinition=high&part=snippet&q=$keywords&type=video+&key=$youtubekey&videoEmbeddable=true&type=video&maxResults=50$p";
+$listUrl="https://www.googleapis.com/youtube/v3/search?videoDefinition=high&part=snippet&q=$keywords&type=video+&key=$youtubekey&videoEmbeddable=true&type=video".$p;
   //$listUrl="http://www.maomibox.com/";
  $response = \Httpful\Request::get($listUrl)->send();
  
@@ -208,6 +101,24 @@ $listUrl="https://www.googleapis.com/youtube/v3/search?videoDefinition=high&part
 
 
 
+$variables = array(
+  'items' => array(),
+  // Leave the title element empty to omit the ul title.
+  'title' => '',
+ 'type' => 'ul',
+  'attributes' => array(
+    'class' => array('media-list'),
+    ),
+
+);
+ 
+
+if($response->body){
+
+}else{
+
+  return "";
+}
 
 
  //print_r($response->body->items);
@@ -219,26 +130,60 @@ foreach ($response->body->items as $key => $item) {
   $video="";
   //$video.=$item->id->videoId;
   //$video.=$item->snippet->title;
+  //
+  $video.='
+ 
+ <div class="media-left">
+ ';
 
-   $video.=l($item->snippet->title,"watch/".$item->id->videoId);
+
+
+  $img=' <img class="" width="150" src="'.$item->snippet->thumbnails->medium->url.'" alt="'.$item->snippet->title.'">';
+  $video.=l( $img,"watch/".$item->id->videoId, array('html' => TRUE, ));
+   
+   $title=l($item->snippet->title,"watch/".$item->id->videoId);
+      $video.='
+
+        </div>
+ <div class="media-body">
+        <h3>'. $title.'</h3>
+        <p>'. $item->snippet->description.'</p>
+     
+      </div>
+ 
+      ';
+
+
+
+
 
 //print_r($item);
 
-
- t_youtube_add_video_validate($item) ;
-
+ //t_youtube_add_video_validate($item) ;
 
 
 
 
+// $variables['items'][] =  $video;
 
- $list[] = $video;
+ 
+$variables['items'][] = array(
+  'data' => $video,
+  'id' => 'item-'.$key,
+  'class' => array(
+    'media',
+  ),
+  
+);
+  
+ 
+
+ // $list[] = $video;
 
 }
 
 
- 
- $list[] =  l(t("Next"),"video-search/$keywords/".$response->body->nextPageToken);
+
 
 
 
@@ -262,16 +207,428 @@ foreach ($response->body->items as $key => $item) {
 
 
 //$list[] =  'The Dead Weather has ' ;
+//
+//
+//
+//
+//
+//
 
 
-  $render_array['_t_youtube_search'] = array(
-    // The theme function to apply to the #items.
-    '#theme' => 'item_list',
-    // The list itself.
-    '#items' => $list,
-    '#title' => t("Your search  keyword: @keyword.", array('@keyword' => $keyword)),
-  );
-  return $render_array;
+
+// $variables['items'][] = array(
+//   'data' => t('This is a second list item'),
+// );
+
+
+
+// $variables['items'][] = array(
+//   'data' => t('This is a nested list item'),
+//   'id' => 'first-nested',
+//   'class' => array('parent-item'),
+//   'children' => array(
+//      t('This is a nested list item.'),
+//      t('This is a second nested list item.'),
+//      array(
+//        'data' => t('This is a nested nested list item'),
+//        'id' => 'first-nested-sublevel',
+//        'class' => array('parent-nested-item'),
+//        'children' => array(
+//          t('This is a nested nested list item.'),
+//          t('This is a second nested nested list item.'),
+//          // And on and on and on ...
+//        )
+//      )
+//    )
+// );
+// $output='<ul class="nav nav-pills" role="tablist">
+
+//   <li role="presentation">Per Page <span class="badge">'.$response->body->pageInfo->resultsPerPage.'</span></li>
+//   <li role="presentation">Total Results <span class="badge">'.$response->body->pageInfo->totalResults.'</span></li>
+// </ul>';
+$output.=theme('item_list', $variables);
+
+
+// $output.='<ul class="nav nav-pills" role="tablist">
+
+//   <li role="presentation">Per Page <span class="badge">'.$response->body->pageInfo->resultsPerPage.'</span></li>
+//   <li role="presentation">Total Results <span class="badge">'.$response->body->pageInfo->totalResults.'</span></li>
+// </ul>';
+
+$next =  l(t("More $keyword video"),"video-list/$keywords/".$response->body->nextPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+ $previous =  l(t("Previous"),"video-list/$keywords/".$response->body->prevPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+
+$output.='<nav>
+  <ul class="pager">
+ 
+    <li class="next">'.$next.'</li>
+  </ul>
+</nav>';
+ //$output.=$listUrl;
+ return $output;
+
+
+  // $render_array['_t_youtube_search'] = array(
+  //   // The theme function to apply to the #items.
+  //   '#theme' => 'item_list',
+  //   // The list itself.
+  //   '#items' => $list,
+  //   '#title' => t("Your search  keyword: @keyword.", array('@keyword' => $keyword)),
+  // );
+  // return $render_array;
+}
+
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function t_youtube_menu() {
+ 
+  $aItems = array(
+      'video-frontpage' => array(
+        'title' => ' Video',
+        'page callback' => '_t_youtube_frontpage',
+        'access callback' => TRUE,
+              'menu_name' => 'main-menu',
+      ),
+
+      'video-frontpage-form' => array(
+        'title' => ' Video Search form',
+        'page callback' => 'drupal_get_form',
+        
+     'page arguments' => array('t_youtube_form'), //put the name of the form here
+    'access callback' => TRUE
+      ),
+
+      'video-list/%/%/%/%' => array(
+      //  'title' => ' Video',
+      //  
+    'title callback' => '_t_youtube_search_title',
+    'title arguments' => array(1),
+        'page callback' => '_t_youtube_search',
+            'page arguments' => array(1,2,3,4),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+      'video-list/%' => array(
+        'title callback' => '_t_youtube_search_title',
+    'title arguments' => array(1),
+        'page callback' => '_t_youtube_search',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+      'watch/%' => array(
+        'title' => ' Video',
+        'page callback' => '_t_youtube_watch',
+            'page arguments' => array(1),
+     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+ 
+      ),
+
+
+    );
+ 
+
+
+
+
+
+
+  return $aItems;
+}
+
+function _t_youtube_search_title($keyword) {
+
+  return $keyword." video list";
+
+
+}
+
+
+function _t_youtube_watch($videoId) {
+
+
+
+$query = new EntityFieldQuery;
+$entities = $query->entityCondition('entity_type', 'node')
+  ->entityCondition('bundle', 'video')
+  ->fieldCondition('field_videoid', 'value', $videoId)
+  ->execute();
+if($entities[node] ){
+
+  // drupal_goto("node/".$entities[node][1]->nid);
+
+foreach ($entities[node] as $key => $node) {
+  # code...
+    drupal_goto("node/".$node->nid,array(),'301');
+}
+
+}else{
+
+//add video to node
+$nid=t_youtube_add_video($videoId) ;
+    drupal_goto("node/".$nid,array(),'301');
+
+}
+
+
+
+
+}
+
+/**
+ * A more complex page callback that takes arguments.
+ *
+ * This callback is mapped to the path 'examples/page_example/arguments/%/%'.
+ *
+ * The % arguments are passed in from the page URL. In our hook_menu
+ * implementation we instructed the menu system to extract the last two
+ * parameters of the path and pass them to this function as arguments.
+ *
+ * This function also demonstrates a more complex render array in the returned
+ * values. Instead of just rendering the HTML with a theme('item_list'), the
+ * list is left unrendered, and a #theme attached to it so that it can be
+ * rendered as late as possible, giving more parts of the system a chance to
+ * change it if necessary.
+ *
+ * Consult @link http://drupal.org/node/930760 Render Arrays documentation
+ * @endlink for details.
+ */
+function _t_youtube_search($keyword,$page="",$order="relevance",$per="10") {
+  // // Make sure you don't trust the URL to be safe! Always check for exploits.
+  // if (!is_numeric($first) ) {
+  //   // We will just show a standard "access denied" page in this case.
+  //   drupal_access_denied();
+  //   // We actually don't get here.
+  //   return;
+  // }
+// $library =libraries_load("httpful");
+ // $list[] = t("Your search  keyword: @keyword.", array('@keyword' => $keyword));
+ 
+ // $list[] = t("First number was number.");
+ // 
+ // 
+ // 
+ // 
+
+// Try to load the library and check if that worked.
+if (($library = libraries_load("httpful")) && !empty($library['loaded'])) {
+  // Do something with the library here.
+  // 
+  // 
+  // 
+
+  $p.="";
+if($page){
+  $p.="&pageToken=$page";
+}
+if($order){
+  $p.="&order=$order";
+}
+if($per){
+  $p.="&maxResults=$per";
+}
+
+global $conf;
+$youtubekey=$conf['youtubekey'] ;
+
+ drupal_set_title($keywords);
+$keywords=urlencode($keyword);
+$listUrl="https://www.googleapis.com/youtube/v3/search?videoDefinition=high&part=snippet&q=$keywords&type=video+&key=$youtubekey&videoEmbeddable=true&type=video".$p;
+  //$listUrl="http://www.maomibox.com/";
+ $response = \Httpful\Request::get($listUrl)->send();
+ 
+// $list[] =  'The Dead Weather has ' . count($response->kind) . " albums.\n";
+ //$list[] = $listUrl;
+ //$list[] = print_r($conf);
+ //print_r($response->body->nextPageToken);
+
+
+
+
+$variables = array(
+  'items' => array(),
+  // Leave the title element empty to omit the ul title.
+  'title' => '',
+ 'type' => 'ul',
+  'attributes' => array(
+    'class' => array('media-list'),
+    ),
+
+);
+ 
+
+if($response->body){
+
+}else{
+
+  return "";
+}
+
+
+ //print_r($response->body->items);
+
+
+foreach ($response->body->items as $key => $item) {
+  # code...
+ 
+  $video="";
+  //$video.=$item->id->videoId;
+  //$video.=$item->snippet->title;
+  //
+  $video.='
+ 
+ <div class="media-left">
+ ';
+
+
+
+  $img=' <img class="" width="180" src="'.$item->snippet->thumbnails->medium->url.'" alt="'.$item->snippet->title.'">';
+  $video.=l( $img,"watch/".$item->id->videoId, array('html' => TRUE, ));
+   
+   $title=l($item->snippet->title,"watch/".$item->id->videoId);
+      $video.='
+
+        </div>
+ <div class="media-body">
+        <h3>'. $title.'</h3>
+        <p>'. $item->snippet->description.'</p>
+     
+      </div>
+ 
+      ';
+
+
+
+
+
+//print_r($item);
+
+ t_youtube_add_video_validate($item) ;
+
+
+
+
+// $variables['items'][] =  $video;
+
+ 
+$variables['items'][] = array(
+  'data' => $video,
+  'id' => 'item-'.$key,
+  'class' => array(
+    'media',
+  ),
+  
+);
+  
+ 
+
+ // $list[] = $video;
+
+}
+
+
+
+
+
+
+
+
+  //$list[] = $listUrl;
+
+
+}else {
+  $error = $library['error'];
+  $error_message = $library['error message'];
+  drupal_set_message($error_message ); 
+
+}
+
+ 
+// $page=$_GET[page];
+// $order=$_GET[order];
+
+
+
+
+//$list[] =  'The Dead Weather has ' ;
+//
+//
+//
+//
+//
+//
+
+
+
+// $variables['items'][] = array(
+//   'data' => t('This is a second list item'),
+// );
+
+
+
+// $variables['items'][] = array(
+//   'data' => t('This is a nested list item'),
+//   'id' => 'first-nested',
+//   'class' => array('parent-item'),
+//   'children' => array(
+//      t('This is a nested list item.'),
+//      t('This is a second nested list item.'),
+//      array(
+//        'data' => t('This is a nested nested list item'),
+//        'id' => 'first-nested-sublevel',
+//        'class' => array('parent-nested-item'),
+//        'children' => array(
+//          t('This is a nested nested list item.'),
+//          t('This is a second nested nested list item.'),
+//          // And on and on and on ...
+//        )
+//      )
+//    )
+// );
+$output='<ul class="nav nav-pills" role="tablist">
+
+  <li role="presentation">Per Page <span class="badge">'.$response->body->pageInfo->resultsPerPage.'</span></li>
+  <li role="presentation">Total Results <span class="badge">'.$response->body->pageInfo->totalResults.'</span></li>
+</ul>';
+$output.=theme('item_list', $variables);
+
+
+$output.='<ul class="nav nav-pills" role="tablist">
+
+  <li role="presentation">Per Page <span class="badge">'.$response->body->pageInfo->resultsPerPage.'</span></li>
+  <li role="presentation">Total Results <span class="badge">'.$response->body->pageInfo->totalResults.'</span></li>
+</ul>';
+
+$next =  l(t("Next"),"video-list/$keywords/".$response->body->nextPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+$previous =  l(t("Previous"),"video-list/$keywords/".$response->body->prevPageToken.'/'.$order.'/'.$response->body->pageInfo->resultsPerPage, array('html' => TRUE, ));
+
+$output.='<nav>
+  <ul class="pager">
+    <li class="previous">'.$previous.'</li>
+    <li class="next">'.$next.'</li>
+  </ul>
+</nav>';
+// $output.=$listUrl;
+ return $output;
+
+
+  // $render_array['_t_youtube_search'] = array(
+  //   // The theme function to apply to the #items.
+  //   '#theme' => 'item_list',
+  //   // The list itself.
+  //   '#items' => $list,
+  //   '#title' => t("Your search  keyword: @keyword.", array('@keyword' => $keyword)),
+  // );
+  // return $render_array;
 }
 /**
  * @} End of "defgroup page_example".
@@ -401,6 +758,8 @@ try
     drupal_set_message(t('faill save node!'));
 
         }
+
+        return $node->nid;
 
 
 
@@ -588,8 +947,8 @@ function t_youtube_form($form, &$form_state) {
  $form['keyword'] = array(
     '#type' => 'textfield', //you can find a list of available types in the form api
     '#title' => 'What is Your keyword?',
-    '#size' => 10,
-    '#maxlength' => 10,
+    '#size' => 250,
+    '#maxlength' => 250,
     '#required' => TRUE, //make this field required 
   );
   
@@ -644,7 +1003,7 @@ function  t_youtube_form_submit($form, &$form_state) {
     
 drupal_set_message(t('Your Keyword:'.$form_state['values']['keyword'])); 
 
-    drupal_goto("video-search/".$form_state['values']['keyword'].'',array(),'301');
+    drupal_goto("video-list/".$form_state['values']['keyword'].'',array(),'301');
     
   // return array(
   //   '#markup' => $output
